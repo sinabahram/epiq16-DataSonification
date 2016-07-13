@@ -1,0 +1,50 @@
+// we bring in the libraries we need
+use Libraries.Compute.Math
+use Libraries.Sound.Music
+use Libraries.Containers.Array
+use Libraries.System.File
+use Libraries.System.FileReader
+        
+// now let's go read the data.txt file in
+// we will then use a FileReader object to read it line by line
+File file
+file:SetPath("../data.txt")
+FileReader reader
+reader:OpenForRead(file)
+
+// let's make an array to store each line of the file
+Array<text> lines
+
+// We then repeat 700 times, reading each line in
+// We could have used the ReadLines action of FileReader, but it's broken!!!
+// So, instead we have to use the ReadLine action, 700 times
+repeat 700 times
+    lines:Add(reader:ReadLine())
+end 
+
+// now that we've read all our data in, we can close the file
+reader:Close()
+
+number minValue = 314.62 // this magic number just came from looking at the data
+number maxValue = 404.54 // this magic number just came from looking at the data
+integer minNote = 24 // the note to start on (you can change this for a lower or higher starting point on the piano)
+integer maxNote = 96 // the note to end on (you can change this for a lower or higher stopping point on the piano)
+number noteDuration = 1.0/32.0 // le'ts use 32nd notes (very fast, change 32 to 16 or 8 for a slower sonification)
+number step = (maxNote-minNote)/(maxValue-minValue) // this step variable is a way of mapping our data range (e.g. around 314.62 PPM to 404.54) to the midi notes 24 to 96 (around six octaves worth)
+
+// let's instantiate a few objects we'll need like Math and Music
+Math math
+Music music
+lineNumber = 0 // this is to keep track of what line of data we're on
+repeat 700 times
+    // the following line of code does the following
+    // 1. get's the line of data, as a text object, that corresponds to lineNumber
+    // 2. splits that text on the "space" character (the split action returns an array of a text variable's contents divided up by the input it receives e.g. to turn all space-delimited entries into an array)
+    // 3. Retrieves the value at index 4 (i.e. the 5th value) from that split array i.e.g this gets the value from the 5th column in each row
+    // 4. Uses the ParseNumber action to turn that text into an object of type number 
+    // 5. Subtracts minValue from it to make it zero-based
+    number value = lines:Get(lineNumber):Split(" "):Get(4):ParseNumber()-minValue
+    integer note = minNote+cast(integer, step*value) // we have to add back in minNote, since we want all our notes to be between minNote and maxNote
+    music:Play(note, noteDuration)
+    lineNumber = lineNumber+1
+end
